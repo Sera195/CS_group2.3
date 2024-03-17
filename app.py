@@ -1,3 +1,3 @@
-print("Hello")
+import streamlit as st
 
-print("Hello again")
+st.write("JEE")
