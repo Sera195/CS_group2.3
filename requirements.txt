@@ -1,4 +1,6 @@
 streamlit
 pandas
 random
-hallohallo
+sös 
+baba
+move
