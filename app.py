@@ -1,79 +1,130 @@
-import streamlit as st
 import requests
+import gmaps
 
-# Hier API-Schlüssel einfügen
-API_KEY = "AIzaSyCczAYQAMPwcBfIM6R6ncLpwrK_-lE8BF8"
+# API key for accessing the Google Maps API
+API_KEY = creds.API_KEY
 
-# Funktion zur Dekodierung der Polylines
-def decode_polyline(polyline_str):
-    index, lat, lng = 0, 0, 0
-    coordinates = []
-    changes = {'latitude': 0, 'longitude': 0}
+# Destination point
+destination = input("Enter your destination: ")
 
-    # Decode polyline
-    while index < len(polyline_str):
-        # Variables for decoding
-        shift, result = 0, 0
+# Start and destination points
+origin = input("Enter a starting point: ")
+origin2 = input("Enter a second starting point (leave blank if not applicable): ")
 
-        # Decode latitude
-        while True:
-            byte = ord(polyline_str[index]) - 63
-            index += 1
-            result |= (byte & 0x1f) << shift
-            shift += 5
-            if not byte >= 0x20:
-                break
-        lat += ~(result >> 1) if result & 1 else (result >> 1)
-        changes['latitude'] = lat / 100000.0
+# Determine if the second starting point is provided
+if origin2:
+    # URL for the Directions API request for the first starting point
+    url_origin = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={destination}&key={API_KEY}"
 
-        # Decode longitude
-        shift, result = 0, 0
-        while True:
-            byte = ord(polyline_str[index]) - 63
-            index += 1
-            result |= (byte & 0x1f) << shift
-            shift += 5
-            if not byte >= 0x20:
-                break
-        lng += ~(result >> 1) if result & 1 else (result >> 1)
-        changes['longitude'] = lng / 100000.0
+    # URL for the Directions API request for the second starting point
+    url_origin2 = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin2}&destination={destination}&key={API_KEY}"
 
-        # Append the decoded coordinate to the list
-        coordinates.append((changes['latitude'], changes['longitude']))
+    # Send HTTP GET requests
+    response_origin = requests.get(url_origin)
+    response_origin2 = requests.get(url_origin2)
 
-    return coordinates
+    # Check if the requests were successful (Status Code 200)
+    if response_origin.status_code == 200 and response_origin2.status_code == 200:
+        # Extract data from the responses (JSON format)
+        data_origin = response_origin.json()
+        data_origin2 = response_origin2.json()
 
-# Funktion zur Abfrage von Routen und Anzeige auf der Karte
-def display_route_on_map(origin, destination, color):
-    url = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={destination}&key={API_KEY}"
-    response = requests.get(url)
-    
-    if response.status_code == 200:
-        data = response.json()
-        
-        # Extrahiere Koordinaten für die Routenpunkte
-        route_points = []
-        for step in data['routes'][0]['legs'][0]['steps']:
-            for point in decode_polyline(step['polyline']['points']):
-                route_points.append({'lat': point[0], 'lon': point[1]})
+        # Configure gmaps
+        gmaps.configure(api_key=API_KEY)
+        fig = gmaps.figure()
 
-        # Zeige die Route auf der Karte an
-        st.map(route_points, zoom=12, color=color)
+        # Check if routes exist for the first starting point
+        if "routes" in data_origin and data_origin["routes"]:
+            # Add direction layers for the first starting point
+            start_location_origin = (
+                data_origin["routes"][0]["legs"][0]["start_location"]["lat"],
+                data_origin["routes"][0]["legs"][0]["start_location"]["lng"],
+            )
+            end_location_origin = (
+                data_origin["routes"][0]["legs"][0]["end_location"]["lat"],
+                data_origin["routes"][0]["legs"][0]["end_location"]["lng"],
+            )
+            transit_layer_origin = gmaps.directions_layer(
+                start=start_location_origin,
+                end=end_location_origin,
+                travel_mode="TRANSIT",
+                stroke_color="blue",
+                stroke_weight=3.0,
+                stroke_opacity=1.0,
+            )
+            fig.add_layer(transit_layer_origin)
+        else:
+            print("No routes found between the first starting point and the destination.")
 
-# Hauptprogramm
-def main():
-    st.title("Directions App")
-    
-    # Inputfelder für Start- und Zielorte
-    origin = st.text_input("Enter a starting point:")
-    destination = st.text_input("Enter your destination:")
-    
-    # Farben für verschiedene Routen festlegen
-    colors = ['red', 'blue', 'green']
+        # Check if routes exist for the second starting point
+        if "routes" in data_origin2 and data_origin2["routes"]:
+            # Add direction layers for the second starting point
+            start_location_origin2 = (
+                data_origin2["routes"][0]["legs"][0]["start_location"]["lat"],
+                data_origin2["routes"][0]["legs"][0]["start_location"]["lng"],
+            )
+            end_location_origin2 = (
+                data_origin2["routes"][0]["legs"][0]["end_location"]["lat"],
+                data_origin2["routes"][0]["legs"][0]["end_location"]["lng"],
+            )
+            transit_layer_origin2 = gmaps.directions_layer(
+                start=start_location_origin2,
+                end=end_location_origin2,
+                travel_mode="TRANSIT",
+                stroke_color="red",
+                stroke_weight=3.0,
+                stroke_opacity=1.0,
+            )
+            fig.add_layer(transit_layer_origin2)
+        else:
+            print("No routes found between the second starting point and the destination.")
 
-    # Zeige die Route auf der Karte für jede eingegebene Farbe
-    for i, color in enumerate(colors):
-        display_route_on_map(origin, destination, color)
+    else:
+        print("Error in request:", response_origin.status_code, response_origin2.status_code)
 
-if __name__ == "__main__":
-    main()
+else:
+    # URL for the Directions API request for the single starting point
+    url_origin = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={destination}&key={API_KEY}"
+
+    # Send HTTP GET request
+    response_origin = requests.get(url_origin)
+
+    # Check if the request was successful (Status Code 200)
+    if response_origin.status_code == 200:
+        # Extract data from the response (JSON format)
+        data_origin = response_origin.json()
+
+        # Configure gmaps
+        gmaps.configure(api_key=API_KEY)
+        fig = gmaps.figure()
+
+        # Check if routes exist for the single starting point
+        if "routes" in data_origin and data_origin["routes"]:
+            # Add direction layer for the single starting point
+            start_location_origin = (
+                data_origin["routes"][0]["legs"][0]["start_location"]["lat"],
+                data_origin["routes"][0]["legs"][0]["start_location"]["lng"],
+            )
+            end_location_origin = (
+                data_origin["routes"][0]["legs"][0]["end_location"]["lat"],
+                data_origin["routes"][0]["legs"][0]["end_location"]["lng"],
+            )
+            transit_layer_origin = gmaps.directions_layer(
+                start=start_location_origin,
+                end=end_location_origin,
+                travel_mode="TRANSIT",
+                stroke_color="blue",
+                stroke_weight=3.0,
+                stroke_opacity=1.0,
+            )
+            fig.add_layer(transit_layer_origin)
+        else:
+            print("No routes found between the starting point and the destination.")
+
+
+    else:
+        print("Error in request:", response_origin.status_code)
+
+
+
+fig
