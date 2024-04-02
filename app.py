@@ -1,7 +1,7 @@
 import streamlit as st
 import gmaps
 
-API_KEY = "AIzaSyBpjEKrlbfkGbVUU8LgiaBFVPHvCADIVgY"
+API_KEY = ""
 
 gmaps.configure(api_key=API_KEY)
 
