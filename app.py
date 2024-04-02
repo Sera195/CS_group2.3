@@ -1,6 +1,8 @@
 import streamlit as st
 import requests
 
+API_KEY = "AIzaSyCczAYQAMPwcBfIM6R6ncLpwrK_-lE8BF8"
+
 # Funktion zur Abfrage von Routen und Anzeige auf der Karte
 def display_route_on_map(origin, destination, color):
     url = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={destination}&key={API_KEY}"
