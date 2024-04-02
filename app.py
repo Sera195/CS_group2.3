@@ -3,7 +3,7 @@ import requests
 import gmaps
 
 # API key for accessing the Google Maps API
-API_KEY = "YOUR_API_KEY"
+API_KEY = "AIzaSyCczAYQAMPwcBfIM6R6ncLpwrK_-lE8BF8"
 
 def main():
     st.title("Directions App")
