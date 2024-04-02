@@ -48,7 +48,7 @@ if origin2:
                 start=start_location_origin,
                 end=end_location_origin,
                 travel_mode="TRANSIT",
-                stroke_color="blue",
+                stroke_color="#0000FF",
                 stroke_weight=3.0,
                 stroke_opacity=1.0,
             )
@@ -71,7 +71,7 @@ if origin2:
                 start=start_location_origin2,
                 end=end_location_origin2,
                 travel_mode="TRANSIT",
-                stroke_color="red",
+                stroke_color="#00FF00",
                 stroke_weight=3.0,
                 stroke_opacity=1.0,
             )
