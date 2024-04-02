@@ -1,132 +1,75 @@
 import streamlit as st
-
 import requests
 import gmaps
 
 # API key for accessing the Google Maps API
-API_KEY = "AIzaSyCczAYQAMPwcBfIM6R6ncLpwrK_-lE8BF8"
+API_KEY = "YOUR_API_KEY"
 
-# Destination point
-destination = input("Enter your destination: ")
+def main():
+    st.title("Directions App")
+    
+    # Input fields
+    destination = st.text_input("Enter your destination:")
+    origin = st.text_input("Enter a starting point:")
+    origin2 = st.text_input("Enter a second starting point (leave blank if not applicable):")
 
-# Start and destination points
-origin = input("Enter a starting point: ")
-origin2 = input("Enter a second starting point (leave blank if not applicable): ")
+    # Check if second origin provided
+    if origin2:
+        show_directions_multiple_origins(destination, origin, origin2)
+    else:
+        show_directions_single_origin(destination, origin)
 
-# Determine if the second starting point is provided
-if origin2:
-    # URL for the Directions API request for the first starting point
-    url_origin = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={destination}&key={API_KEY}"
+def show_directions_single_origin(destination, origin):
+    url = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={destination}&key={API_KEY}"
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        data = response.json()
+        display_directions(data)
+    else:
+        st.error("Error in request:", response.status_code)
 
-    # URL for the Directions API request for the second starting point
+def show_directions_multiple_origins(destination, origin1, origin2):
+    url_origin1 = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin1}&destination={destination}&key={API_KEY}"
     url_origin2 = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin2}&destination={destination}&key={API_KEY}"
-
-    # Send HTTP GET requests
-    response_origin = requests.get(url_origin)
+    
+    response_origin1 = requests.get(url_origin1)
     response_origin2 = requests.get(url_origin2)
-
-    # Check if the requests were successful (Status Code 200)
-    if response_origin.status_code == 200 and response_origin2.status_code == 200:
-        # Extract data from the responses (JSON format)
-        data_origin = response_origin.json()
+    
+    if response_origin1.status_code == 200 and response_origin2.status_code == 200:
+        data_origin1 = response_origin1.json()
         data_origin2 = response_origin2.json()
+        
+        display_directions(data_origin1, color="blue")
+        display_directions(data_origin2, color="red")
+    else:
+        st.error("Error in request:", response_origin1.status_code, response_origin2.status_code)
 
-        # Configure gmaps
+def display_directions(data, color="blue"):
+    if "routes" in data and data["routes"]:
+        start_location = (
+            data["routes"][0]["legs"][0]["start_location"]["lat"],
+            data["routes"][0]["legs"][0]["start_location"]["lng"],
+        )
+        end_location = (
+            data["routes"][0]["legs"][0]["end_location"]["lat"],
+            data["routes"][0]["legs"][0]["end_location"]["lng"],
+        )
+
         gmaps.configure(api_key=API_KEY)
         fig = gmaps.figure()
-
-        # Check if routes exist for the first starting point
-        if "routes" in data_origin and data_origin["routes"]:
-            # Add direction layers for the first starting point
-            start_location_origin = (
-                data_origin["routes"][0]["legs"][0]["start_location"]["lat"],
-                data_origin["routes"][0]["legs"][0]["start_location"]["lng"],
-            )
-            end_location_origin = (
-                data_origin["routes"][0]["legs"][0]["end_location"]["lat"],
-                data_origin["routes"][0]["legs"][0]["end_location"]["lng"],
-            )
-            transit_layer_origin = gmaps.directions_layer(
-                start=start_location_origin,
-                end=end_location_origin,
-                travel_mode="TRANSIT",
-                stroke_color="blue",
-                stroke_weight=3.0,
-                stroke_opacity=1.0,
-            )
-            fig.add_layer(transit_layer_origin)
-        else:
-            print("No routes found between the first starting point and the destination.")
-
-        # Check if routes exist for the second starting point
-        if "routes" in data_origin2 and data_origin2["routes"]:
-            # Add direction layers for the second starting point
-            start_location_origin2 = (
-                data_origin2["routes"][0]["legs"][0]["start_location"]["lat"],
-                data_origin2["routes"][0]["legs"][0]["start_location"]["lng"],
-            )
-            end_location_origin2 = (
-                data_origin2["routes"][0]["legs"][0]["end_location"]["lat"],
-                data_origin2["routes"][0]["legs"][0]["end_location"]["lng"],
-            )
-            transit_layer_origin2 = gmaps.directions_layer(
-                start=start_location_origin2,
-                end=end_location_origin2,
-                travel_mode="TRANSIT",
-                stroke_color="red",
-                stroke_weight=3.0,
-                stroke_opacity=1.0,
-            )
-            fig.add_layer(transit_layer_origin2)
-        else:
-            print("No routes found between the second starting point and the destination.")
-
+        transit_layer = gmaps.directions_layer(
+            start=start_location,
+            end=end_location,
+            travel_mode="TRANSIT",
+            stroke_color=color,
+            stroke_weight=3.0,
+            stroke_opacity=1.0,
+        )
+        fig.add_layer(transit_layer)
+        st.write(fig)
     else:
-        print("Error in request:", response_origin.status_code, response_origin2.status_code)
+        st.warning("No routes found.")
 
-else:
-    # URL for the Directions API request for the single starting point
-    url_origin = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={destination}&key={API_KEY}"
-
-    # Send HTTP GET request
-    response_origin = requests.get(url_origin)
-
-    # Check if the request was successful (Status Code 200)
-    if response_origin.status_code == 200:
-        # Extract data from the response (JSON format)
-        data_origin = response_origin.json()
-
-        # Configure gmaps
-        gmaps.configure(api_key=API_KEY)
-        fig = gmaps.figure()
-
-        # Check if routes exist for the single starting point
-        if "routes" in data_origin and data_origin["routes"]:
-            # Add direction layer for the single starting point
-            start_location_origin = (
-                data_origin["routes"][0]["legs"][0]["start_location"]["lat"],
-                data_origin["routes"][0]["legs"][0]["start_location"]["lng"],
-            )
-            end_location_origin = (
-                data_origin["routes"][0]["legs"][0]["end_location"]["lat"],
-                data_origin["routes"][0]["legs"][0]["end_location"]["lng"],
-            )
-            transit_layer_origin = gmaps.directions_layer(
-                start=start_location_origin,
-                end=end_location_origin,
-                travel_mode="TRANSIT",
-                stroke_color="blue",
-                stroke_weight=3.0,
-                stroke_opacity=1.0,
-            )
-            fig.add_layer(transit_layer_origin)
-        else:
-            print("No routes found between the starting point and the destination.")
-
-
-    else:
-        print("Error in request:", response_origin.status_code)
-
-
-
-fig
+if __name__ == "__main__":
+    main()
