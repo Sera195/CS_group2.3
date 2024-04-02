@@ -113,7 +113,7 @@ else:
                 start=start_location_origin,
                 end=end_location_origin,
                 travel_mode="TRANSIT",
-                stroke_color="blue",
+                stroke_color="#0000FF",
                 stroke_weight=3.0,
                 stroke_opacity=1.0,
             )
