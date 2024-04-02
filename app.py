@@ -1,5 +1,3 @@
-pip install gmaps
-
 import requests
 import gmaps
 
